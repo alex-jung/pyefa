@@ -12,7 +12,7 @@ def parse_datetime(date: str) -> datetime.datetime:
 
 
 def parse_date(date: str) -> datetime.date:
-    return datetime.strptime(date, "%Y-%m-%d").date()
+    return datetime.datetime.strptime(date, "%Y-%m-%d").date()
 
 
 def is_datetime(date: str):
