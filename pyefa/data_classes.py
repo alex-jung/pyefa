@@ -26,6 +26,17 @@ class TransportType(IntEnum):
     RE = 6
 
 
+class StopFilter(IntEnum):
+    NO_FILTER = 0
+    LOCATIONS = 1
+    STOPS = 2
+    STREETS = 4
+    ADDRESSES = 8
+    INTERSACTIONS = 16
+    POIS = 32
+    POST_CODES = 64
+
+
 @dataclass
 class Stop:
     id: str

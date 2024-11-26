@@ -14,7 +14,14 @@ from voluptuous import (
 from .exceptions import EfaParameterError
 
 from .helpers import is_date, is_datetime, is_time, parse_date, parse_datetime
-from .data_classes import Departure, Stop, StopType, SystemInfo, TransportType
+from .data_classes import (
+    Departure,
+    Stop,
+    StopFilter,
+    StopType,
+    SystemInfo,
+    TransportType,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -68,14 +75,23 @@ class Request:
         Returns:
             str: parameters as string ready to use in URL
         """
-        # validata/update parameters with schema
+
+        self._validate_params()
+
+        return f"{self._name}?commonMacro={self._macro}" + self._params_str()
+
+    def _validate_params(self):
+        """Validate parameters stored for request. This step will extend parameters with default values
+        as well.
+
+        Raises:
+            EfaParameterError: Validation of some parameter(s) failed
+        """
         try:
             self._parameters = self._schema(self._parameters)
         except MultipleInvalid as exc:
             _LOGGER.error("Parameters validation failed", exc_info=exc)
             raise EfaParameterError from exc
-
-        return f"{self._name}?commonMacro={self._macro}" + self._params_str()
 
     def _params_str(self) -> str:
         """Return parameters concatenated with &
@@ -114,13 +130,14 @@ class StopFinderRequest(Request):
         self._schema = self._schema.extend(
             {
                 Required("type_sf", default="any"): Any("any", "coord"),
-                Optional("name_sf"): str,
+                Required("name_sf"): str,
                 Optional("anyMaxSizeHitList", default=30): int,
                 Optional("anySigWhenPerfectNoOtherMatches"): Any("0", "1", 0, 1),
                 Optional("anyResSort_sf"): str,
-                Optional("doNotSearchForStops_sf", default=0): Any("0", "1", 0, 1),
-                Optional("anyObjFilter_origin", default=0): Range(
-                    min=0, max=64 + 32 + 16 + 8 + 4 + 2 + 1
+                Optional("anyObjFilter_sf"): int,
+                Optional("doNotSearchForStops_sf"): Any("0", "1", 0, 1),
+                Optional("anyObjFilter_origin"): Range(
+                    min=0, max=sum([x.value for x in StopFilter])
                 ),
             }
         )

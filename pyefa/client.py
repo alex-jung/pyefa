@@ -4,7 +4,7 @@ import json
 import aiohttp
 import logging
 
-from .data_classes import Stop, SystemInfo
+from .data_classes import Stop, StopFilter, SystemInfo
 from .requests import DeparturesRequest, Request, StopFinderRequest, SystemInfoRequest
 from .exceptions import EfaConnectionError
 
@@ -47,7 +47,7 @@ class EfaClient:
 
         self._base_url = url if url.endswith("/") else f"{url}/"
 
-    async def system_info(self) -> SystemInfo:
+    async def info(self) -> SystemInfo:
         """Get system info used by EFA endpoint.
 
         Returns:
@@ -60,20 +60,31 @@ class EfaClient:
 
         return request.parse(response)
 
-    async def stops(self, name: str, type="any") -> list[Stop]:
-        """Find stop(s) by provided `name`
+    async def stops(
+        self, name: str, type="any", filters: list[StopFilter] = []
+    ) -> list[Stop]:
+        """Find stop(s) by provided `name` (coordinates or stop name).
 
         Args:
-            name (str): Name of station to search for (case insensitive)
+            name (str): Name or ID of stop to search (case insensitive)
+            e.g. "Plärrer", "Nordostbanhof" or "de:09564:704"
             type (str, optional): ['any', 'coord']. Defaults to "any".
+            filters (list[StopFilter]): List of filters to apply for search. Defaults to empty.
 
         Returns:
-            list[Stop]: List of found station(s) provided by endpoint
+            list[Stop]: List of station(s) provided by endpoint. List is sorted by match quality.
         """
-        _LOGGER.info(f"Request searching for stop with name {name}")
+        _LOGGER.info(f"Request stop search by name/id/coord {name}")
         _LOGGER.debug(f"type: {type}")
+        _LOGGER.debug(f"filters: {filters}")
 
         request = StopFinderRequest(type, name)
+
+        if filters:
+            request.add_param("anyObjFilter_sf", sum(filters))
+
+        # ToDo: add possibility for search by coordinates
+
         response = await self._run_query(self._build_url(request))
 
         return request.parse(response)
