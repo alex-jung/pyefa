@@ -11,6 +11,10 @@ def parse_datetime(date: str) -> datetime.datetime:
     return dt.astimezone(TZ_INFO)
 
 
+def parse_date(date: str) -> datetime.date:
+    return datetime.strptime(date, "%Y-%m-%d").date()
+
+
 def is_datetime(date: str):
     pattern = re.compile(r"\d{8} \d{2}:\d{2}")
 

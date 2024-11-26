@@ -5,23 +5,26 @@ from datetime import datetime
 from voluptuous import (
     Any,
     Match,
+    MultipleInvalid,
     Optional,
     Schema,
     Required,
     Range,
 )
 
-from .helpers import is_date, is_datetime, is_time, parse_datetime
+from .exceptions import EfaParameterError
+
+from .helpers import is_date, is_datetime, is_time, parse_date, parse_datetime
 from .data_classes import Departure, Stop, StopType, SystemInfo, TransportType
 
-LOGGER = logging.getLogger(__name__)
+_LOGGER = logging.getLogger(__name__)
 
 
 class Request:
-    def __init__(self, name, macro) -> None:
-        self._name = name
-        self._macro = macro
-        self._parameters = {"outputFormat": "rapidJSON"}
+    def __init__(self, name: str, macro: str) -> None:
+        self._name: str = name
+        self._macro: str = macro
+        self._parameters: dict[str, str] = {}
         self._schema: Schema = Schema(
             {
                 Required("outputFormat", default="rapidJSON"): Any("rapidJSON"),
@@ -34,19 +37,21 @@ class Request:
     def parse(self, data: str):
         raise NotImplementedError("Abstract method not implemented")
 
-    @abstractmethod
     def add_param(self, param: str, value: str):
         if not param or not value:
             return
 
-        LOGGER.debug(f'Add parameter "{param}" with value "{value}"')
+        _LOGGER.debug(f'Add parameter "{param}" with value "{value}"')
 
         self._parameters.update({param: value})
 
-        LOGGER.debug("Updated parameters dict:")
-        LOGGER.debug(self._parameters)
+        _LOGGER.debug("Updated parameters dict:")
+        _LOGGER.debug(self._parameters)
 
-    def add_datetime(self, date: str):
+    def add_param_datetime(self, date: str):
+        if not date:
+            return
+
         if is_datetime(date):
             self.add_param("itdDate", date.split(" ")[0])
             self.add_param("itdTime", date.split(" ")[1].replace(":", ""))
@@ -58,12 +63,27 @@ class Request:
             raise ValueError("Date(time) provided in invalid format")
 
     def __str__(self) -> str:
+        """Validate parameters schema and return parameters as string\n
+        for URL parametrization
+
+        Returns:
+            str: parameters as string ready to use in URL
+        """
         # validata/update parameters with schema
-        self._parameters = self._schema(self._parameters)
+        try:
+            self._parameters = self._schema(self._parameters)
+        except MultipleInvalid as exc:
+            _LOGGER.error("Parameters validation failed", exc_info=exc)
+            raise EfaParameterError from exc
 
-        return f"{self._name}?{self._macro}" + self._params_str()
+        return f"{self._name}?commonMacro={self._macro}" + self._params_str()
 
-    def _params_str(self):
+    def _params_str(self) -> str:
+        """Return parameters concatenated with &
+
+        Returns:
+            str: parameters as string
+        """
         if not self._parameters:
             return ""
 
@@ -75,13 +95,15 @@ class SystemInfoRequest(Request):
         super().__init__("XML_SYSTEMINFO_REQUEST", "system")
 
     def parse(self, data: dict) -> SystemInfo:
+        _LOGGER.info("Parsing system info response")
+
         version = data.get("version", None)
         data_format = data.get("ptKernel").get("dataFormat")
         valid_from = data.get("validity").get("from")
         valid_to = data.get("validity").get("to")
 
-        valid_from = datetime.strptime(valid_from, "%Y-%m-%d").date()
-        valid_to = datetime.strptime(valid_to, "%Y-%m-%d").date()
+        valid_from = parse_date(valid_from)
+        valid_to = parse_date(valid_to)
 
         return SystemInfo(version, data_format, valid_from, valid_to)
 
@@ -110,7 +132,7 @@ class StopFinderRequest(Request):
     def parse(self, data: dict) -> list[Stop]:
         locations = data.get("locations", [])
 
-        LOGGER.info(f"{len(locations)} stop(s) found")
+        _LOGGER.info(f"{len(locations)} stop(s) found")
 
         stops = []
 
@@ -195,7 +217,7 @@ class DeparturesRequest(Request):
     def parse(self, data: dict):
         stops = data.get("stopEvents", [])
 
-        LOGGER.debug(f"{len(stops)} departure(s) found")
+        _LOGGER.debug(f"{len(stops)} departure(s) found")
 
         departures = []
 

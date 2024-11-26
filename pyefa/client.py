@@ -2,14 +2,14 @@ from enum import StrEnum
 
 import json
 import aiohttp
-
-from .data_classes import Stop
-from .requests import DeparturesRequest, Request, StopFinderRequest, SystemInfoRequest
-from .exceptions import EfaConnectionError
 import logging
 
+from .data_classes import Stop, SystemInfo
+from .requests import DeparturesRequest, Request, StopFinderRequest, SystemInfoRequest
+from .exceptions import EfaConnectionError
 
-LOGGER = logging.getLogger(__name__)
+
+_LOGGER = logging.getLogger(__name__)
 
 
 class Requests(StrEnum):
@@ -34,27 +34,47 @@ class EfaClient:
         await self._client_session.__aexit__(*args, **kwargs)
 
     def __init__(self, url: str):
+        """Create a new instance of client.
+
+        Args:
+            url (str): url string to EFA endpoint
+
+        Raises:
+            ValueError: No url provided
+        """
         if not url:
-            raise ValueError("No URL provided")
+            raise ValueError("No EFA endpoint url provided")
 
         self._base_url = url if url.endswith("/") else f"{url}/"
 
-    async def system_info(self):
-        """ """
+    async def system_info(self) -> SystemInfo:
+        """Get system info used by EFA endpoint.
+
+        Returns:
+            SystemInfo: info object
+        """
+        _LOGGER.info("Request system info")
+
         request = SystemInfoRequest()
-
-        url = self._build_url(request)
-
-        response = await self._run_query(url)
+        response = await self._run_query(self._build_url(request))
 
         return request.parse(response)
 
-    async def find_stop(self, name: str, type="any"):
+    async def find_stop(self, name: str, type="any") -> list[Stop]:
+        """Find stop(s) by provided `name`
+
+        Args:
+            name (str): Name of station to search for (case insensitive)
+            type (str, optional): ['any', 'coord']. Defaults to "any".
+
+        Returns:
+            list[Stop]: List of found station(s) provided by endpoint
+        """
+        _LOGGER.info(f"Request searching for stop with name {name}")
+        _LOGGER.debug(f"type: {type}")
+
         request = StopFinderRequest(type, name)
-
-        url = self._build_url(request)
-
-        response = await self._run_query(url)
+        response = await self._run_query(self._build_url(request))
 
         return request.parse(response)
 
@@ -67,26 +87,29 @@ class EfaClient:
         limit=40,
         date: str | None = None,
     ):
+        _LOGGER.info(f"Request departures for stop {stop}")
+        _LOGGER.debug(f"limit: {limit}")
+        _LOGGER.debug(f"date: {date}")
+
         if isinstance(stop, Stop):
             stop = stop.id
 
         request = DeparturesRequest(stop)
 
+        # add parameters
         request.add_param("limit", limit)
+        request.add_param_datetime(date)
 
-        if date:
-            request.add_datetime(date)
-
-        url = self._build_url(request)
-
-        response = await self._run_query(url)
+        response = await self._run_query(self._build_url(request))
 
         return request.parse(response)
 
     async def _run_query(self, query: str) -> dict:
-        LOGGER.debug(f"Run query {query}")
+        _LOGGER.info(f"Run query {query}")
 
         async with self._client_session.get(query) as response:
+            _LOGGER.debug(f"Response status: {response.status}")
+
             if response.status == 200:
                 return json.loads(await response.text())
             else:

@@ -7,7 +7,6 @@
     "editor.codeActionsOnSave": 
     {
         "source.organizeImports": "always",
-        "source.convertImportFormat": "always"
     },
     "editor.defaultFormatter": "ms-python.black-formatter",
     "notebook.defaultFormatter": "ms-python.black-formatter",
