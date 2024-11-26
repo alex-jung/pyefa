@@ -60,7 +60,7 @@ class EfaClient:
 
         return request.parse(response)
 
-    async def find_stop(self, name: str, type="any") -> list[Stop]:
+    async def stops(self, name: str, type="any") -> list[Stop]:
         """Find stop(s) by provided `name`
 
         Args:
