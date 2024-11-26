@@ -26,8 +26,7 @@ dependencies = [
 tests = [
   'coverage>=5.0.3',
   'pytest',
-  'pytest-benchmark[histogram]>=3.2.1',
-  'flake8'
+  'pytest-benchmark[histogram]>=3.2.1'
 ]
 
 [tool.pytest.ini_options]
