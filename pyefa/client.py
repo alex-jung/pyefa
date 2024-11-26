@@ -91,7 +91,7 @@ class EfaClient:
         return request.parse(response)
 
     async def trip(self):
-        pass
+        raise NotImplementedError
 
     async def departures(
         self,

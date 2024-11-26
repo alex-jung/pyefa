@@ -62,4 +62,5 @@ class Departure:
     destination: Stop
     transport: TransportType
     planned_time: datetime
-    actual_time: datetime | None
+    estimated_time: datetime | None
+    infos: list[dict]

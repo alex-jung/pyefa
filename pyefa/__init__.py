@@ -1,13 +1,12 @@
+from .client import EfaClient
 from .data_classes import (
-    StopFilter,
-    Stop,
-    StopType,
     Departure,
+    Stop,
+    StopFilter,
+    StopType,
     SystemInfo,
     TransportType,
 )
-
-from .client import EfaClient
 
 __all__ = [
     "StopFilter",
