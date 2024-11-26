@@ -27,10 +27,12 @@ tests = [
   'coverage>=5.0.3',
   'pytest',
   'pytest-benchmark[histogram]>=3.2.1',
+  'flake8'
 ]
 
 [tool.pytest.ini_options]
 minversion = "6.0"
+addopts = "-ra -q"
 testpaths = [
     "tests"
 ]
