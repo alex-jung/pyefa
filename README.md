@@ -12,7 +12,7 @@ async def main():
     async with EfaClient("https://efa.vgn.de/vgnExt_oeffi/") as client:
         result = await asyncio.gather(
             client.system_info(),
-            client.find_stop("Nürnberg Plärrer"),
+            client.stops("Nürnberg Plärrer"),
             client.departures("de:09564:704", limit=10, date="20241126 16:30"),
         )
 
