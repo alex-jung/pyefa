@@ -1,4 +1,4 @@
-from data_classes import (
+from .data_classes import (
     StopFilter,
     Stop,
     StopType,
@@ -6,3 +6,15 @@ from data_classes import (
     SystemInfo,
     TransportType,
 )
+
+from .client import EfaClient
+
+__all__ = [
+    "StopFilter",
+    "Stop",
+    "StopType",
+    "Departure",
+    "SystemInfo",
+    "TransportType",
+    "EfaClient",
+]
