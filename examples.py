@@ -3,15 +3,6 @@ from pyefa.client import EfaClient
 from pprint import pprint
 
 
-async def find_stops(client):
-    # find plärrer station
-    stops = await client.find_stop("Nürnberg Plärrer")
-    pprint(stops)
-
-    stops = await client.find_stop("Plärrer")
-    pprint(stops)
-
-
 async def main():
     async with EfaClient("https://efa.vgn.de/vgnExt_oeffi/") as client:
         result = await asyncio.gather(
