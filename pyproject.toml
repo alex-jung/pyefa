@@ -8,7 +8,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "pyefa"
 version = "2024.0.1"
-requires-python = ">= 3.12"
+requires-python = ">= 3.11"
 description = "Retrive data from an EFA endpoint"
 authors = [
   {name = "Alex Jung", email = "jungdevelop@gmail.com"}
