@@ -1,8 +1,6 @@
-import datetime
 from enum import StrEnum
 
 import json
-from pprint import pprint
 import aiohttp
 
 from .data_classes import Stop

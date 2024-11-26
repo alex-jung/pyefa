@@ -3,5 +3,13 @@
         "tests"
     ],
     "python.testing.unittestEnabled": false,
-    "python.testing.pytestEnabled": true
+    "python.testing.pytestEnabled": true,
+    "editor.codeActionsOnSave": 
+    {
+        "source.organizeImports": "always",
+        "source.convertImportFormat": "always"
+    },
+    "editor.defaultFormatter": "ms-python.black-formatter",
+    "notebook.defaultFormatter": "ms-python.black-formatter",
+    "editor.formatOnSave": true
 }

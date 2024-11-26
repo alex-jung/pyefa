@@ -1,6 +1,7 @@
+import logging
+
 from abc import abstractmethod
 from datetime import datetime
-from pprint import pprint
 from voluptuous import (
     Any,
     Match,
@@ -12,8 +13,6 @@ from voluptuous import (
 
 from .helpers import is_date, is_datetime, is_time, parse_datetime
 from .data_classes import Departure, Stop, StopType, SystemInfo, TransportType
-
-import logging
 
 LOGGER = logging.getLogger(__name__)
 
@@ -204,7 +203,7 @@ class DeparturesRequest(Request):
             planned_time = stop.get("departureTimePlanned")
             planned_time = parse_datetime(planned_time)
 
-            infos = stop.get("infos", [])
+            # infos = stop.get("infos", [])
             transportation = stop.get("transportation", {})
 
             if transportation:
