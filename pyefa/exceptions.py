@@ -4,3 +4,7 @@ class EfaConnectionError(IOError):
 
 class EfaParameterError(ValueError):
     pass
+
+
+class EfaParseError(AttributeError):
+    pass

@@ -1,5 +1,5 @@
 import asyncio
-from pyefa.client import EfaClient
+from pyefa import EfaClient, StopFilter
 from pprint import pprint
 
 
@@ -8,6 +8,7 @@ async def main():
         result = await asyncio.gather(
             client.info(),
             client.stops("Nürnberg Plärrer"),
+            client.stops("Nordostbahnhof", filters=[StopFilter.STOPS]),
             client.departures("de:09564:704", limit=10, date="20241126 16:30"),
         )
 
@@ -17,8 +18,11 @@ async def main():
     print("Plärrer stops".center(60, "-"))
     pprint(result[1])
 
-    print("Plärrer departures - 26 Nov. 16:30".center(60, "-"))
+    print("Nordostbahnhof stops".center(60, "-"))
     pprint(result[2])
+
+    print("Plärrer departures - 26 Nov. 16:30".center(60, "-"))
+    pprint(result[3])
 
 
 if __name__ == "__main__":

@@ -3,14 +3,6 @@ from datetime import date, datetime
 from enum import IntEnum, StrEnum
 
 
-@dataclass
-class SystemInfo:
-    version: str
-    data_format: str
-    valid_from: date
-    valid_to: date
-
-
 class StopType(StrEnum):
     STOP = "stop"
     POI = "poi"
@@ -20,10 +12,17 @@ class StopType(StrEnum):
 
 
 class TransportType(IntEnum):
-    SUBWAY = 2
-    TRAM = 4
-    BUS = 5
-    RE = 6
+    RAIL = 0  # RB
+    SUBURBAN = 1  # S-Bahn
+    SUBWAY = 2  # U-Bahn
+    CITY_RAIL = 3  # Stadtbahn
+    TRAM = 4  # Straßenbahn
+    BUS = 5  # Bus
+    RBUS = 6  # Regional Bus
+    EXPRESS_BUS = 7  # Schnellbus
+    CABLE_TRAM = 8  # Seilbahn
+    FERRY = 9  # Schief
+    AST = 10  # Anruf-Sammel-Taxi
 
 
 class StopFilter(IntEnum):
@@ -35,6 +34,14 @@ class StopFilter(IntEnum):
     INTERSACTIONS = 16
     POIS = 32
     POST_CODES = 64
+
+
+@dataclass
+class SystemInfo:
+    version: str
+    data_format: str
+    valid_from: date
+    valid_to: date
 
 
 @dataclass

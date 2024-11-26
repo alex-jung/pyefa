@@ -7,7 +7,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "pyefa"
-version = "2024.0.1"
+version = "0.0.1"
 requires-python = ">= 3.11"
 description = "Retrive data from an EFA endpoint"
 authors = [
@@ -25,6 +25,7 @@ dependencies = [
 [project.optional-dependencies]
 tests = [
   'coverage>=5.0.3',
+  'pytest-cov',
   'pytest',
   'pytest-benchmark[histogram]>=3.2.1'
 ]
@@ -35,6 +36,21 @@ addopts = "-ra -q"
 testpaths = [
     "tests"
 ]
+
+[tool.coverage.report]
+exclude_also = [
+    "_LOGGER.",
+    "def __repr__",
+    "if self.debug:",
+    "if settings.DEBUG",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if 0:",
+    "if __name__ == .__main__.:",
+    "if TYPE_CHECKING:",
+    "class .*\\bProtocol\\):",
+    "@(abc\\.)?abstractmethod"
+    ]
 
 [project.urls]
 Homepage = "https://github.com/alex-jung/pyefa"

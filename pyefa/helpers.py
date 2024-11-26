@@ -16,6 +16,9 @@ def parse_date(date: str) -> datetime.date:
 
 
 def is_datetime(date: str):
+    if not isinstance(date, str) or not date:
+        return False
+
     pattern = re.compile(r"\d{8} \d{2}:\d{2}")
 
     if not bool(pattern.match(date)):
@@ -28,6 +31,9 @@ def is_datetime(date: str):
 
 
 def is_date(date: str):
+    if not isinstance(date, str) or not date:
+        return False
+
     pattern = re.compile(r"(?P<year>\d{4})(?P<month>\d{2})(?P<day>\d{2})")
 
     if not bool(pattern.match(date)):

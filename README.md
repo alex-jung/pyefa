@@ -1,11 +1,38 @@
 # pyefa
 [![Python package](https://github.com/alex-jung/pyefa/actions/workflows/python-package.yml/badge.svg)](https://github.com/alex-jung/pyefa/actions/workflows/python-package.yml)
 [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+# Installation
 
-## Code example
+# Known EFA endpoints
+* [Verkehrsverbund Großraum Nürnberg](https://efa.vgn.de/vgnExt_oeffi/) (VGN)
+* [Verkehrsverbund Rhein-Ruhr](https://efa.vrr.de/vrr/) (VRR)
+
+# Features
+## System info
+Get API system information
+``` python
+info: SystemInfo = None
+
+async with EfaClient("https://efa.vgn.de/vgnExt_oeffi/") as client:
+    info = await client.info()
+
+print(info.version)
+print(info.data_format)
+print(info.valid_from)
+print(info.valid_to)
+```
+Output:
+```python
+
+```
+## Find stop
+
+## Get departures
+
+# Usage
 ``` python
 import asyncio
-from pyefa.client import EfaClient
+from pyefa import EfaClient
 from pprint import pprint
 
 async def main():
@@ -28,3 +55,10 @@ async def main():
 if __name__ == "__main__":
     asyncio.run(main())
 ```
+
+# Open points
+* Implement find stop by coordinates
+* Implementd xml parsing for APIs not supporting rapid JSON
+
+# Documentation
+> s. pydoc in code

@@ -1,19 +1,16 @@
 import logging
-
 from abc import abstractmethod
+
 from voluptuous import (
     Any,
     Match,
     MultipleInvalid,
     Optional,
-    Schema,
-    Required,
     Range,
+    Required,
+    Schema,
 )
 
-from .exceptions import EfaParameterError
-
-from .helpers import is_date, is_datetime, is_time, parse_date, parse_datetime
 from .data_classes import (
     Departure,
     Stop,
@@ -22,6 +19,8 @@ from .data_classes import (
     SystemInfo,
     TransportType,
 )
+from .exceptions import EfaParameterError, EfaParseError
+from .helpers import is_date, is_datetime, is_time, parse_date, parse_datetime
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -112,13 +111,17 @@ class SystemInfoRequest(Request):
     def parse(self, data: dict) -> SystemInfo:
         _LOGGER.info("Parsing system info response")
 
-        version = data.get("version", None)
-        data_format = data.get("ptKernel").get("dataFormat")
-        valid_from = data.get("validity").get("from")
-        valid_to = data.get("validity").get("to")
+        try:
+            version = data.get("version", None)
+            data_format = data.get("ptKernel").get("dataFormat")
+            valid_from = data.get("validity").get("from")
+            valid_to = data.get("validity").get("to")
 
-        valid_from = parse_date(valid_from)
-        valid_to = parse_date(valid_to)
+            valid_from = parse_date(valid_from)
+            valid_to = parse_date(valid_to)
+        except AttributeError as exc:
+            _LOGGER.error("Parsing of system info data failed", exc_info=exc)
+            raise EfaParseError(str(exc)) from exc
 
         return SystemInfo(version, data_format, valid_from, valid_to)
 
@@ -147,6 +150,11 @@ class StopFinderRequest(Request):
 
     def parse(self, data: dict) -> list[Stop]:
         locations = data.get("locations", [])
+
+        if not isinstance(locations, list):
+            raise EfaParseError(
+                f"Failed to parse locations. Expected a list, got {type(locations)}"
+            )
 
         _LOGGER.info(f"{len(locations)} stop(s) found")
 
@@ -206,7 +214,7 @@ class TripRequest(Request):
         )
 
     def parse(self, data: dict):
-        pass
+        raise NotImplementedError
 
 
 class DeparturesRequest(Request):
@@ -215,7 +223,7 @@ class DeparturesRequest(Request):
 
         self._schema = self._schema.extend(
             {
-                Required("name_dm", msg="Required parameter name_dm not provided"): str,
+                Required("name_dm"): str,
                 Required("type_dm", default="stop"): Any("any", "stop"),
                 Required("mode", default="direct"): Any("any", "direct"),
                 Optional("useAllStops"): Any("0", "1", 0, 1),

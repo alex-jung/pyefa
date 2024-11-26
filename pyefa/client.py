@@ -1,13 +1,12 @@
+import json
+import logging
 from enum import StrEnum
 
-import json
 import aiohttp
-import logging
 
 from .data_classes import Stop, StopFilter, SystemInfo
-from .requests import DeparturesRequest, Request, StopFinderRequest, SystemInfoRequest
 from .exceptions import EfaConnectionError
-
+from .requests import DeparturesRequest, Request, StopFinderRequest, SystemInfoRequest
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -57,6 +56,8 @@ class EfaClient:
 
         request = SystemInfoRequest()
         response = await self._run_query(self._build_url(request))
+
+        print(response)
 
         return request.parse(response)
 
