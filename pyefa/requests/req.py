@@ -1,41 +1,37 @@
 import logging
 from abc import abstractmethod
 
-from voluptuous import Any, Match, MultipleInvalid, Optional, Required, Schema
+from voluptuous import MultipleInvalid, Schema
 
+from pyefa.exceptions import EfaParameterError, EfaResponseInvalid
 from pyefa.helpers import is_date, is_datetime, is_time
-
-from ..exceptions import EfaParameterError
 
 _LOGGER = logging.getLogger(__name__)
 
 
 class Request:
-    def __init__(self, name: str, macro: str) -> None:
+    def __init__(self, name: str, macro: str, output_format: str = "rapidJSON") -> None:
         self._name: str = name
         self._macro: str = macro
         self._parameters: dict[str, str] = {}
-        self._schema: Schema = Schema(
-            {
-                Required("outputFormat", default="rapidJSON"): Any("rapidJSON"),
-                Optional("itdDate"): Match(r"\d{8}"),
-                Optional("itdTime"): Match(r"\d{4}"),
-            }
-        )
+        self._schema: Schema = self._get_params_schema()
 
-    @abstractmethod
-    def parse(self, data: str):
-        raise NotImplementedError("Abstract method not implemented")
+        self.add_param("outputFormat", output_format)
 
     def add_param(self, param: str, value: str):
         if not param or not value:
             return
 
+        if param not in self._get_params_schema().schema.keys():
+            raise EfaParameterError(
+                f"Parameter {param} is now allowed for this request"
+            )
+
         _LOGGER.debug(f'Add parameter "{param}" with value "{value}"')
 
         self._parameters.update({param: value})
 
-        _LOGGER.debug("Updated parameters dict:")
+        _LOGGER.debug("Updated parameters:")
         _LOGGER.debug(self._parameters)
 
     def add_param_datetime(self, date: str):
@@ -60,22 +56,35 @@ class Request:
             str: parameters as string ready to use in URL
         """
 
-        self._validate_params()
+        self._parameters = self._validate_params(self._parameters)
 
         return f"{self._name}?commonMacro={self._macro}" + self._params_str()
 
-    def _validate_params(self):
+    def _validate_params(self, params: dict) -> dict:
         """Validate parameters stored for request. This step will extend parameters with default values
         as well.
+
+        Returns:
+            str: Validated and extended with default value parameters dict
 
         Raises:
             EfaParameterError: Validation of some parameter(s) failed
         """
         try:
-            self._parameters = self._schema(self._parameters)
+            return self._schema(params)
         except MultipleInvalid as exc:
             _LOGGER.error("Parameters validation failed", exc_info=exc)
-            raise EfaParameterError from exc
+            raise EfaParameterError(str(exc)) from exc
+
+    def _validate_response(self, response: dict) -> None:
+        val_schema = self._get_response_schema()
+
+        try:
+            val_schema(response)
+        except MultipleInvalid as exc:
+            raise EfaResponseInvalid(
+                f"Server response validataion failed - {str(exc)}"
+            ) from None
 
     def _params_str(self) -> str:
         """Return parameters concatenated with &
@@ -87,3 +96,15 @@ class Request:
             return ""
 
         return "&" + "&".join([f"{k}={str(v)}" for k, v in self._parameters.items()])
+
+    @abstractmethod
+    def parse(self, data: str):
+        raise NotImplementedError("Abstract method not implemented")
+
+    @abstractmethod
+    def _get_params_schema(self) -> Schema:
+        raise NotImplementedError("Abstract method not implemented")
+
+    @abstractmethod
+    def _get_response_schema(self) -> Schema:
+        raise NotImplementedError("Abstract method not implemented")

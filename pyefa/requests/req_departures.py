@@ -1,11 +1,11 @@
 import logging
 
-from voluptuous import Any, Optional, Required
+from voluptuous import Any, Date, Datetime, Optional, Required, Schema
 
 from pyefa.data_classes import Departure, Stop, StopType, TransportType
 from pyefa.helpers import parse_datetime
-
-from .req import Request
+from pyefa.requests.req import Request
+from pyefa.requests.schemas import SCHEMA_LOCATION, SCHEMA_TRANSPORTATION
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -14,24 +14,11 @@ class DeparturesRequest(Request):
     def __init__(self, stop: str) -> None:
         super().__init__("XML_DM_REQUEST", "dm")
 
-        self._schema = self._schema.extend(
-            {
-                Required("name_dm"): str,
-                Required("type_dm", default="stop"): Any("any", "stop"),
-                Required("mode", default="direct"): Any("any", "direct"),
-                Optional("useAllStops"): Any("0", "1", 0, 1),
-                Optional("useRealtime", default=1): Any("0", "1", 0, 1),
-                Optional("lsShowTrainsExplicit"): Any("0", "1", 0, 1),
-                Optional("useProxFootSearch"): Any("0", "1", 0, 1),
-                Optional("deleteAssigendStops_dm"): Any("0", "1", 0, 1),
-                Optional("doNotSearchForStops_dm"): Any("0", "1", 0, 1),
-                Optional("limit"): int,
-            }
-        )
-
         self.add_param("name_dm", stop)
 
     def parse(self, data: dict):
+        self._validate_response(data)
+
         stops = data.get("stopEvents", [])
 
         _LOGGER.debug(f"{len(stops)} departure(s) found")
@@ -90,3 +77,45 @@ class DeparturesRequest(Request):
                     )
                 )
         return departures
+
+    def _get_params_schema(self) -> Schema:
+        return Schema(
+            {
+                Required("outputFormat", default="rapidJSON"): Any("rapidJSON"),
+                Required("name_dm"): str,
+                Required("type_dm", default="stop"): Any("any", "stop"),
+                Required("mode", default="direct"): Any("any", "direct"),
+                Optional("itdTime"): Datetime("%M%S"),
+                Optional("itdDate"): Date("%Y%m%d"),
+                Optional("useAllStops"): Any("0", "1", 0, 1),
+                Optional("useRealtime", default=1): Any("0", "1", 0, 1),
+                Optional("lsShowTrainsExplicit"): Any("0", "1", 0, 1),
+                Optional("useProxFootSearch"): Any("0", "1", 0, 1),
+                Optional("deleteAssigendStops_dm"): Any("0", "1", 0, 1),
+                Optional("doNotSearchForStops_dm"): Any("0", "1", 0, 1),
+                Optional("limit"): int,
+            }
+        )
+
+    def _get_response_schema(self) -> Schema:
+        return Schema(
+            {
+                Required("version"): str,
+                Optional("systemMessages"): list,
+                Required("locations"): [SCHEMA_LOCATION],
+                Required("stopEvents"): [
+                    Schema(
+                        {
+                            Required("location"): SCHEMA_LOCATION,
+                            Required("departureTimePlanned"): Datetime(
+                                "%Y-%m-%dT%H:%M:%S%z"
+                            ),
+                            Optional("departureTimeEstimated"): Datetime(
+                                "%Y-%m-%dT%H:%M:%S%z"
+                            ),
+                            Required("transportation"): SCHEMA_TRANSPORTATION,
+                        }
+                    )
+                ],
+            }
+        )

@@ -1,11 +1,10 @@
 import logging
 
-from voluptuous import Any, Optional, Range, Required
+from voluptuous import Any, Optional, Range, Required, Schema
 
 from pyefa.data_classes import Stop, StopFilter, StopType, TransportType
-from pyefa.exceptions import EfaParseError
-
-from .req import Request
+from pyefa.requests.req import Request
+from pyefa.requests.schemas import SCHEMA_LOCATION
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -14,31 +13,13 @@ class StopFinderRequest(Request):
     def __init__(self, req_type: str, name: str) -> None:
         super().__init__("XML_STOPFINDER_REQUEST", "stopfinder")
 
-        self._schema = self._schema.extend(
-            {
-                Required("type_sf", default="any"): Any("any", "coord"),
-                Required("name_sf"): str,
-                Optional("anyMaxSizeHitList", default=30): int,
-                Optional("anySigWhenPerfectNoOtherMatches"): Any("0", "1", 0, 1),
-                Optional("anyResSort_sf"): str,
-                Optional("anyObjFilter_sf"): int,
-                Optional("doNotSearchForStops_sf"): Any("0", "1", 0, 1),
-                Optional("anyObjFilter_origin"): Range(
-                    min=0, max=sum([x.value for x in StopFilter])
-                ),
-            }
-        )
-
         self.add_param("type_sf", req_type)
         self.add_param("name_sf", name)
 
     def parse(self, data: dict) -> list[Stop]:
-        locations = data.get("locations", [])
+        self._validate_response(data)
 
-        if not isinstance(locations, list):
-            raise EfaParseError(
-                f"Failed to parse locations. Expected a list, got {type(locations)}"
-            )
+        locations = data.get("locations", [])
 
         _LOGGER.info(f"{len(locations)} stop(s) found")
 
@@ -78,3 +59,29 @@ class StopFinderRequest(Request):
             )
             for x in stops
         ]
+
+    def _get_params_schema(self) -> Schema:
+        return Schema(
+            {
+                Required("outputFormat", default="rapidJSON"): Any("rapidJSON"),
+                Required("type_sf", default="any"): Any("any", "coord"),
+                Required("name_sf"): str,
+                Optional("anyMaxSizeHitList", default=30): int,
+                Optional("anySigWhenPerfectNoOtherMatches"): Any("0", "1", 0, 1),
+                Optional("anyResSort_sf"): str,
+                Optional("anyObjFilter_sf"): int,
+                Optional("doNotSearchForStops_sf"): Any("0", "1", 0, 1),
+                Optional("anyObjFilter_origin"): Range(
+                    min=0, max=sum([x.value for x in StopFilter])
+                ),
+            }
+        )
+
+    def _get_response_schema(self) -> Schema:
+        return Schema(
+            {
+                Required("version"): str,
+                Optional("systemMessages"): list,
+                Required("locations"): [SCHEMA_LOCATION],
+            }
+        )

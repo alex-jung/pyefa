@@ -8,3 +8,7 @@ class EfaParameterError(ValueError):
 
 class EfaParseError(AttributeError):
     pass
+
+
+class EfaResponseInvalid(ValueError):
+    pass

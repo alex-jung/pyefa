@@ -9,6 +9,8 @@ class StopType(StrEnum):
     ADDRESS = "address"
     STREET = "street"
     LOCALITY = "locality"
+    SUBURB = "suburb"
+    PLATFORM = "platform"
 
 
 class TransportType(IntEnum):

@@ -1,10 +1,10 @@
 import logging
 
-from pyefa.data_classes import SystemInfo
-from pyefa.exceptions import EfaParseError
-from pyefa.helpers import parse_date
+from voluptuous import Any, Date, Required, Schema
 
-from .req import Request
+from pyefa.data_classes import SystemInfo
+from pyefa.helpers import parse_date
+from pyefa.requests.req import Request
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -16,16 +16,41 @@ class SystemInfoRequest(Request):
     def parse(self, data: dict) -> SystemInfo:
         _LOGGER.info("Parsing system info response")
 
-        try:
-            version = data.get("version", None)
-            data_format = data.get("ptKernel").get("dataFormat")
-            valid_from = data.get("validity").get("from")
-            valid_to = data.get("validity").get("to")
+        self._validate_response(data)
 
-            valid_from = parse_date(valid_from)
-            valid_to = parse_date(valid_to)
-        except AttributeError as exc:
-            _LOGGER.error("Parsing of system info data failed", exc_info=exc)
-            raise EfaParseError(str(exc)) from exc
+        version = data.get("version", None)
+        data_format = data.get("ptKernel").get("dataFormat")
+        valid_from = data.get("validity").get("from")
+        valid_to = data.get("validity").get("to")
+
+        valid_from = parse_date(valid_from)
+        valid_to = parse_date(valid_to)
 
         return SystemInfo(version, data_format, valid_from, valid_to)
+
+    def _get_params_schema(self) -> Schema:
+        return Schema(
+            {
+                Required("outputFormat", default="rapidJSON"): Any("rapidJSON"),
+            }
+        )
+
+    def _get_response_schema(self) -> Schema:
+        return Schema(
+            {
+                Required("version"): str,
+                Required("ptKernel"): Schema(
+                    {
+                        Required("appVersion"): str,
+                        Required("dataFormat"): str,
+                        Required("dataBuild"): str,
+                    }
+                ),
+                Required("validity"): Schema(
+                    {
+                        Required("from"): Date("%Y-%m-%d"),
+                        Required("to"): Date("%Y-%m-%d"),
+                    }
+                ),
+            }
+        )

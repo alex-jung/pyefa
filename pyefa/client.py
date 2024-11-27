@@ -1,12 +1,18 @@
 import json
 import logging
 from enum import StrEnum
+from pprint import pprint
 
 import aiohttp
 
-from .data_classes import Stop, StopFilter, SystemInfo
-from .exceptions import EfaConnectionError
-from .requests import DeparturesRequest, Request, StopFinderRequest, SystemInfoRequest
+from pyefa.data_classes import Stop, StopFilter, SystemInfo
+from pyefa.exceptions import EfaConnectionError
+from pyefa.requests import (
+    DeparturesRequest,
+    Request,
+    StopFinderRequest,
+    SystemInfoRequest,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -32,7 +38,7 @@ class EfaClient:
     async def __aexit__(self, *args, **kwargs):
         await self._client_session.__aexit__(*args, **kwargs)
 
-    def __init__(self, url: str):
+    def __init__(self, url: str, debug: bool = False):
         """Create a new instance of client.
 
         Args:
@@ -44,7 +50,8 @@ class EfaClient:
         if not url:
             raise ValueError("No EFA endpoint url provided")
 
-        self._base_url = url if url.endswith("/") else f"{url}/"
+        self._debug: bool = debug
+        self._base_url: str = url if url.endswith("/") else f"{url}/"
 
     async def info(self) -> SystemInfo:
         """Get system info used by EFA endpoint.
@@ -56,8 +63,6 @@ class EfaClient:
 
         request = SystemInfoRequest()
         response = await self._run_query(self._build_url(request))
-
-        print(response)
 
         return request.parse(response)
 
@@ -123,10 +128,15 @@ class EfaClient:
             _LOGGER.debug(f"Response status: {response.status}")
 
             if response.status == 200:
-                return json.loads(await response.text())
+                response_json = json.loads(await response.text())
+
+                if self._debug:
+                    pprint(response_json)
+
+                return response_json
             else:
                 raise EfaConnectionError(
-                    f"Failed to query EFA endpoint. Returned {response.status}"
+                    f"Failed to fetch data from endpoint. Returned {response.status}"
                 )
 
     def _build_url(self, request: Request):
